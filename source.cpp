@@ -16,24 +16,23 @@ public:
 
 static float SmoothingFunction(float radius, float distance)
 {
-	if (distance > radius*radius) {
+	if (distance > radius) {
 		return 0;
 	}
-	float norm = 4.0f / (PI * pow(radius, 6));
-	float diff = std::max(0.0f,radius*radius - distance);
-	return diff * diff * norm;
+	float volume = 4.0f * 3.14 * radius * radius * radius * 0.33f;
+	float diff = std::max(0.0f, radius*radius - distance);
+	return (diff * diff )/volume;
 }
 
 float FindDensity(Vector2 Position,float rad,Ball balls[])
 {
 	float density = 0;
 	const float mass = 1;
-	for (int i = 0;i < 30;i++) {
+	for (int i = 0;i < 50;i++) {
 		
 		float distanceX = balls[i].position.x - Position.x;
 		float distanceY = balls[i].position.y - Position.y;
-		float dist = sqrt((distanceX * distanceX) + (distanceY * distanceY));
-		std::cout << dist << std::endl;
+		float dist = (sqrtf((distanceX * distanceX) + (distanceY * distanceY)));
 		float influence = SmoothingFunction(rad, dist);
 		density += mass * influence;
 	}
@@ -50,11 +49,11 @@ int main()
 	SetTargetFPS(60);
 	float gravity = 98.0f;
 	float dt = GetFrameTime();
-	const int NumberParticle = 30;
+	const int NumberParticle = 50;
 	Ball ball[NumberParticle];
 
-	int ParticleSize = 15;
-	int ParticleSpacing = 12;
+	int ParticleSize = 10;
+	int ParticleSpacing = 6;
 	int partPerRow = sqrt(NumberParticle);
 	int partPerCol = (NumberParticle - 1) / partPerRow + 1;
 
@@ -63,22 +62,22 @@ int main()
 
 	for (int i = 0;i < NumberParticle;i++)
 	{
-		float x = 500+(i % partPerRow - partPerRow / 2.0f + 0.5f) * spacing;
-		float y = 360+(i / partPerRow - partPerCol / 2.0f + 0.5f) * spacing;
+		float x = GetRandomValue(100,1000) + (i % partPerRow - partPerRow / 2.0f + 0.5f) * spacing;
+		float y = GetRandomValue(100,600) + (i / partPerRow - partPerCol / 2.0f + 0.5f) * spacing;
 		ball[i].position = {x,y};
 		ball[i].velocity = { 0,0 };
 	}
+	float radius = 20.0f;
+	Vector2 PositionDensity = { 500,600 };
 
-	float density = FindDensity({ 520,360 }, 23, ball)*1000;
-	std::cout << density << std::endl;
-	float dampingVelocity = 0.88f;
+	float dampingVelocity = 0.98f;
 
 
 	while (!WindowShouldClose())
 	{
 		float dt = GetFrameTime();
 		
-	/*	for (int i = 0;i < NumberParticle;i++) {
+		for (int i = 0;i < NumberParticle;i++) {
 			ball[i].velocity.y += gravity * dt;
 			ball[i].position.y += ball[i].velocity.y * dt;
 		}
@@ -88,15 +87,16 @@ int main()
 				ball[i].position.y = SCREENHEIGHT - 20;
 				ball[i].velocity.y *= -1 * dampingVelocity;
 			}
-		}*/
-
+		}
+		float density = FindDensity({ PositionDensity }, radius, ball) ;
+			std::cout << density << std::endl;
 		BeginDrawing();
 		ClearBackground(BLACK);
 		DrawRectangleLinesEx({ 2,2,SCREENWIDTH - 5,SCREENHEIGHT - 5 }, 5, YELLOW);
 		for (int i = 0;i < NumberParticle;i++) {
 			DrawCircleV(ball[i].position, ParticleSize, SKYBLUE);
 		}
-		DrawCircleLinesV({ 560,400 }, 100.0f, RED);
+		DrawCircleLinesV({ PositionDensity }, radius, RED);
 		DrawText(TextFormat("%f",density), 800, 100, 20, WHITE);
 		
 		EndDrawing();
